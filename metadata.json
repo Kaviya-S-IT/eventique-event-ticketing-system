@@ -1,0 +1,6 @@
+{
+  "name": "Eventique",
+  "description": "Multi-Tenant Event & Ticket Reservation System featuring 10-minute hold countdowns, tiered ticketing, real-time analytics, and role-based workflows.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

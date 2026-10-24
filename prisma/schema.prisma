@@ -1,0 +1,277 @@
+// Eventique - Multi-Tenant Event & Ticket Reservation System
+// Prisma Schema for PostgreSQL
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  ORGANIZER
+  ATTENDEE
+}
+
+enum OrganizerStatus {
+  ACTIVE
+  PENDING_REVIEW
+  SUSPENDED
+}
+
+enum EventCategory {
+  CONCERTS
+  TECHNOLOGY_CONFERENCES
+  WORKSHOPS
+  ART_EXHIBITIONS
+  FESTIVALS
+  NETWORKING_EVENTS
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+  CANCELLED
+}
+
+enum ReservationStatus {
+  HELD
+  PAYMENT_PENDING
+  CONFIRMED
+  EXPIRED
+  CANCELLED
+  PAYMENT_FAILED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+model User {
+  id           String            @id @default(uuid())
+  email        String            @unique
+  passwordHash String
+  name         String
+  role         Role              @default(ATTENDEE)
+  phone        String?
+  avatarUrl    String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  
+  organizer    OrganizerProfile?
+  reservations Reservation[]
+  bookings     Booking[]
+  auditLogs    AuditLog[]
+
+  @@index([role])
+}
+
+model OrganizerProfile {
+  id             String          @id @default(uuid())
+  userId         String          @unique
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessName   String
+  slug           String          @unique
+  logoUrl        String?
+  bio            String?
+  contactEmail   String
+  contactPhone   String?
+  status         OrganizerStatus @default(PENDING_REVIEW)
+  verified       Boolean         @default(false)
+  commissionRate Float           @default(0.05)
+  payoutAccount  String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  events         Event[]
+
+  @@index([status])
+}
+
+model Event {
+  id             String          @id @default(uuid())
+  tenantId       String
+  organizer      OrganizerProfile @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title          String
+  slug           String          @unique
+  category       EventCategory
+  description    String          @db.Text
+  bannerImage    String
+  startDate      DateTime
+  endDate        DateTime
+  startTime      String
+  endTime        String
+  venueName      String
+  venueAddress   String
+  venueCity      String
+  venueState     String
+  accessibility  String?
+  status         EventStatus     @default(DRAFT)
+  salesCutoff    DateTime
+  refundPolicy   String          @db.Text
+  terms          String          @db.Text
+  featured       Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  ticketTiers    TicketTier[]
+  reservations   Reservation[]
+  bookings       Booking[]
+
+  @@index([tenantId])
+  @@index([category])
+  @@index([status])
+  @@index([startDate])
+}
+
+model TicketTier {
+  id              String            @id @default(uuid())
+  eventId         String
+  event           Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name            String
+  description     String
+  pricePaise      Int               // Integer minor currency units (paise) for INR: ₹1 = 100 paise
+  totalQuantity   Int
+  reservedQuantity Int              @default(0) // Quantity in active 10-minute holds
+  soldQuantity    Int               @default(0) // Confirmed sold
+  maxPerAttendee  Int               @default(5)
+  salesStartDate  DateTime
+  salesEndDate    DateTime
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  reservationItems ReservationItem[]
+  issuedTickets    BookingTicket[]
+
+  @@index([eventId])
+}
+
+model Reservation {
+  id              String            @id @default(uuid())
+  eventId         String
+  event           Event             @relation(fields: [eventId], references: [id])
+  attendeeId      String
+  attendee        User              @relation(fields: [attendeeId], references: [id])
+  attendeeName    String
+  attendeeEmail   String
+  totalQuantity   Int
+  subtotalPaise   Int
+  serviceFeePaise Int
+  totalAmountPaise Int
+  status          ReservationStatus @default(HELD)
+  createdAt       DateTime          @default(now())
+  expiresAt       DateTime          // Exactly 10 minutes from creation
+  paymentId       String?
+  updatedAt       DateTime          @updatedAt
+
+  items           ReservationItem[]
+  booking         Booking?
+  payment         Payment?
+
+  @@index([eventId])
+  @@index([attendeeId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model ReservationItem {
+  id            String      @id @default(uuid())
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  ticketTierId  String
+  ticketTier    TicketTier  @relation(fields: [ticketTierId], references: [id])
+  tierName      String
+  quantity      Int
+  unitPricePaise Int
+  subtotalPaise Int
+
+  @@index([reservationId])
+  @@index([ticketTierId])
+}
+
+model Payment {
+  id                   String        @id @default(uuid())
+  reservationId        String        @unique
+  reservation          Reservation   @relation(fields: [reservationId], references: [id])
+  amountPaise          Int
+  currency             String        @default("INR")
+  status               PaymentStatus @default(PENDING)
+  idempotencyKey       String        @unique
+  paymentMethod        String
+  transactionReference String        @unique
+  failureReason        String?
+  createdAt            DateTime      @default(now())
+  completedAt          DateTime?
+
+  @@index([idempotencyKey])
+  @@index([transactionReference])
+}
+
+model Booking {
+  id               String          @id @default(uuid())
+  bookingReference String          @unique // e.g. "ETQ-2026-X839"
+  reservationId    String          @unique
+  reservation      Reservation     @relation(fields: [reservationId], references: [id])
+  eventId          String
+  event            Event           @relation(fields: [eventId], references: [id])
+  attendeeId       String
+  attendee         User            @relation(fields: [attendeeId], references: [id])
+  attendeeName     String
+  attendeeEmail    String
+  attendeePhone    String?
+  totalQuantity    Int
+  totalAmountPaise Int
+  paymentReference String
+  status           BookingStatus   @default(CONFIRMED)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  issuedTickets    BookingTicket[]
+
+  @@index([eventId])
+  @@index([attendeeId])
+  @@index([bookingReference])
+}
+
+model BookingTicket {
+  id           String      @id @default(uuid())
+  bookingId    String
+  booking      Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  ticketTierId String
+  ticketTier   TicketTier  @relation(fields: [ticketTierId], references: [id])
+  ticketNumber String      @unique // e.g. "ETQ-TKT-84912"
+  tierName     String
+  attendeeName String
+  qrPayload    String
+  createdAt    DateTime    @default(now())
+
+  @@index([bookingId])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  userRole   Role
+  action     String
+  entityType String
+  entityId   String
+  details    String   @db.Text
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([entityType])
+  @@index([createdAt])
+}

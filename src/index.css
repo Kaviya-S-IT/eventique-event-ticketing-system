@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    --color-pure-white: #FFFFFF;
+    --color-pale-lavender: #EDE7F6;
+    --color-light-brown: #C4A484;
+    --color-dark-brown: #5D4634;
+    --color-soft-lavender: #D8CBE8;
+    --color-warm-beige: #F5EFE7;
+    --color-body-text: #5F5A64;
+    --color-success-green: #388E65;
+    --color-warning-amber: #D99A36;
+    --color-error-red: #C94C4C;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    color: #5F5A64;
+    background-color: #FFFFFF;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: #5D4634;
+    letter-spacing: -0.015em;
+  }
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #F5EFE7;
+}
+::-webkit-scrollbar-thumb {
+  background: #D8CBE8;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #C4A484;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
