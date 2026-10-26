@@ -2,7 +2,7 @@
 
 Eventique is an enterprise-grade multi-tenant event ticketing and ticket reservation platform built with React, TypeScript, Tailwind CSS, Express, and PostgreSQL-compatible concurrency primitives.
 
-## 🎨 Color Palette & Design System
+##  Color Palette & Design System
 
 - **Pure White (`#FFFFFF`):** Base canvas, cards, modal surfaces.
 - **Pale Lavender (`#EDE7F6`):** Hero backgrounds, active filter chips, soft accents.
@@ -17,7 +17,7 @@ Eventique is an enterprise-grade multi-tenant event ticketing and ticket reserva
 
 ---
 
-## ⏱️ The 10-Minute Reservation Engine & Concurrency Control
+## The 10-Minute Reservation Engine & Concurrency Control
 
 1. **Serialized Atomic Mutex (`SELECT ... FOR UPDATE` equivalent):**
    - When multiple attendees request the last available seat simultaneously, an atomic lock serializes inventory validation.
@@ -31,7 +31,7 @@ Eventique is an enterprise-grade multi-tenant event ticketing and ticket reserva
 
 ---
 
-## 👥 Multi-Tenant Roles & Quick Switcher
+##  Multi-Tenant Roles & Quick Switcher
 
 Use the top **Role Switcher** dropdown in the header to switch between personas:
 
@@ -49,13 +49,13 @@ Use the top **Role Switcher** dropdown in the header to switch between personas:
 
 ---
 
-## 🧪 Automated Concurrency & Inventory Test Suite
+## Automated Concurrency & Inventory Test Suite
 
 Run the concurrency stress-test tool directly from the navigation bar ("Test Atomic Concurrency Lock") or run the automated test suite in `/tests/reservation-concurrency.test.ts`.
 
 ---
 
-## 🚀 Running Locally
+##  Running Locally
 
 ```bash
 # Install dependencies
